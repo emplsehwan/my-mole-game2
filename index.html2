@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> 오민호 잡기 게임! </title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #f0f8ff;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .score-board {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 20px;
+            justify-content: center;
+            margin: 0 auto;
+        }
+        .hole {
+            width: 100px;
+            height: 100px;
+            background-color: #5c4033; /* 흙 색깔 */
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 10px #000;
+        }
+        .mole {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 100%; /* 처음에는 구멍 아래에 숨어있음 */
+            border-radius: 50%;
+            transition: top 0.2s ease-out;
+            cursor: pointer;
+            object-fit: cover;
+        }
+        .mole.up {
+            top: 0; /* 클래스가 추가되면 튀어오름 */
+        }
+        .start-btn {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #ff6347;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .start-btn:hover {
+            background-color: #ff4500;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>내 얼굴 두더지 잡기!</h1>
+    <div class="score-board">점수: <span id="score">0</span></div>
+    <button class="start-btn" onclick="startGame()">게임 시작!</button>
+
+    <div class="grid">
+        <div class="hole"><img class="mole" src="" alt="두더지"></div>
+        <div class="hole"><img class="mole" src="" alt="두더지"></div>
+        <div class="hole"><img class="mole" src="" alt="두더지"></div>
+        <div class="hole"><img class="mole" src="" alt="두더지"></div>
+        <div class="hole"><img class="mole" src="" alt="두더지"></div>
+        <div class="hole"><img class="mole" src="" alt="두더지"></div>
+        <div class="hole"><img class="mole" src="" alt="두더지"></div>
+        <div class="hole"><img class="mole" src="" alt="두더지"></div>
+        <div class="hole"><img class="mole" src="" alt="두더지"></div>
+    </div>
+
+    <script>
+        const holes = document.querySelectorAll('.hole');
+        const scoreBoard = document.querySelector('#score');
+        const moles = document.querySelectorAll('.mole');
+        
+        let lastHole;
+        let timeUp = false;
+        let score = 0;
+
+        // 1. 얼굴 이미지 배열 (보내주신 파일명 적용)
+        const myFaces = [
+            '1000029751.jpg',
+            '1000029744.jpg',
+            '1000029758.jpg',
+            '1000029745.jpg',
+            '1000029752.jpg'
+        ];
+
+        // 2. 효과음 오디오 객체 생성
+        // 주의: 준비하신 mp3 파일 이름을 sound1.mp3, sound2.mp3로 변경하거나 아래 이름을 수정하세요.
+        const sounds = [
+            new Audio('sound1.mp3'),
+            new Audio('sound2.mp3')
+        ];
+
+        // 랜덤한 시간(두더지가 올라와 있는 시간)을 구하는 함수
+        function randomTime(min, max) {
+            return Math.round(Math.random() * (max - min) + min);
+        }
+
+        // 랜덤한 구멍을 선택하는 함수
+        function randomHole(holes) {
+            const idx = Math.floor(Math.random() * holes.length);
+            const hole = holes[idx];
+            if (hole === lastHole) {
+                return randomHole(holes);
+            }
+            lastHole = hole;
+            return hole;
+        }
+
+        // 랜덤한 얼굴 이미지를 선택하는 함수
+        function randomFace() {
+            const idx = Math.floor(Math.random() * myFaces.length);
+            return myFaces[idx];
+        }
+
+        // 랜덤한 효과음을 재생하는 함수
+        function playRandomSound() {
+            const idx = Math.floor(Math.random() * sounds.length);
+            // 사운드가 겹치지 않고 처음부터 재생되도록 설정
+            sounds[idx].currentTime = 0; 
+            sounds[idx].play();
+        }
+
+        // 두더지가 튀어오르는 함수
+        function peep() {
+            const time = randomTime(500, 1000); // 0.5초 ~ 1초 사이 랜덤
+            const hole = randomHole(holes);
+            const moleImg = hole.querySelector('.mole');
+            
+            // 올라올 때 랜덤 얼굴로 이미지 변경
+            moleImg.src = randomFace();
+            moleImg.classList.add('up');
+
+            setTimeout(() => {
+                moleImg.classList.remove('up');
+                if (!timeUp) peep();
+            }, time);
+        }
+
+        // 게임 시작 함수
+        function startGame() {
+            scoreBoard.textContent = 0;
+            timeUp = false;
+            score = 0;
+            peep();
+            
+            // 게임은 15초 동안 진행됩니다.
+            setTimeout(() => timeUp = true, 15000); 
+        }
+
+        // 두더지를 클릭(터치)했을 때 점수를 올리고 소리를 내는 함수
+        function whack(e) {
+            if(!e.isTrusted) return; // 부정 클릭 방지
+            
+            score++;
+            this.classList.remove('up'); // 클릭 즉시 내려감
+            scoreBoard.textContent = score;
+            playRandomSound(); // 랜덤 소리 재생
+        }
+
+        moles.forEach(mole => mole.addEventListener('mousedown', whack));
+        moles.forEach(mole => mole.addEventListener('touchstart', whack)); // 모바일 터치 지원
+    </script>
+</body>
+</html>

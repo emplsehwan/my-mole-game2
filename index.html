@@ -8,57 +8,49 @@
         body {
             font-family: 'Arial', sans-serif;
             text-align: center;
-            background-color: #f0f8ff; /* image_9.png의 배경색 */
+            background-color: #f0f8ff;
             margin: 0;
             padding: 20px;
         }
         h1 {
             color: #333;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
         .score-board {
             font-size: 24px;
             font-weight: bold;
-            margin-bottom: 30px; /* 그리드와 간격 확보 */
+            margin-bottom: 30px;
         }
         .grid {
             display: grid;
-            grid-template-columns: repeat(3, 120px); /* 구멍 크기 약간 키움 */
-            grid-gap: 20px; /* image_9.png의 넓은 간격 */
+            grid-template-columns: repeat(3, 120px);
+            gap: 20px;
             justify-content: center;
             margin: 0 auto;
         }
         .hole {
             width: 120px;
             height: 120px;
-            background-color: #5c4033; /* image_9.png의 갈색 */
+            background-color: #5c4033; /* 흙 색깔 */
             border-radius: 50%;
             position: relative;
-            overflow: hidden; /* 두더지가 테두리 밖으로 잘리게 */
-            box-shadow: inset 0 0 10px #000; /* 구멍 깊이감 */
+            overflow: hidden; /* 구멍 밖으로 나가는 사진 자르기 */
+            box-shadow: inset 0 0 10px #000;
         }
         .mole {
             width: 100%;
             height: 100%;
             position: absolute;
-            
-            /* 핵심: 기본 숨김 상태 - 구멍 아래에 위치 */
-            top: 100%; 
-            left: 50%;
-            transform: translateX(-50%); /* 가로 중앙 */
-            
-            transition: all 0.2s ease-out; /* 애니메이션 */
+            top: 100%; /* 기본 상태: 구멍 아래에 숨김 */
+            left: 0;
+            object-fit: cover;      /* 사진 비율 안 깨지고 구멍에 꽉 차게 */
+            object-position: center; /* 사진 정중앙을 기준으로 맞춤 */
+            transition: top 0.2s ease-out; /* 올라오는 속도 */
             cursor: pointer;
-            object-fit: cover; /* 이미지가 구멍에 맞게 가득 차고 중앙 정렬 */
-            object-position: center; /* object-fit 사용 시 중앙에 위치 */
         }
-        
-        /* 핵심: 튀어오른 상태 - 완벽한 중앙 배치 */
         .mole.up {
-            top: 50%; /* 세로 중앙 */
-            transform: translate(-50%, -50%); /* 가로세로 중앙 완벽 정렬 */
+            top: 0; /* 위로 쏙 올라온 상태 */
         }
-        
         .start-btn {
             padding: 10px 20px;
             font-size: 18px;
@@ -101,9 +93,80 @@
         let timeUp = false;
         let score = 0;
 
-        // 1. 얼굴 이미지 배열 (image_9.png 기준 순서로 할당)
+        // 사진 파일명들
         const myFaces = [
-            '1000029751.jpg', // image_0 (찡그린)
-            '1000029744.jpg', // image_1 (서프라이즈 - image_9.png 왼쪽)
-            '1000029758.jpg', // image_2 (찡그린/화난 - image_9.png 중앙)
-            '1000029745.jpg', // image_3 (혀 내민 - image_9.png
+            '1000029751.jpg',
+            '1000029744.jpg',
+            '1000029758.jpg',
+            '1000029745.jpg',
+            '1000029752.jpg'
+        ];
+
+        // 소리 파일명들
+        const sounds = [
+            new Audio('sound1.mp3'),
+            new Audio('sound2.mp3')
+        ];
+
+        function randomTime(min, max) {
+            return Math.round(Math.random() * (max - min) + min);
+        }
+
+        function randomHole(holes) {
+            const idx = Math.floor(Math.random() * holes.length);
+            const hole = holes[idx];
+            if (hole === lastHole) {
+                return randomHole(holes);
+            }
+            lastHole = hole;
+            return hole;
+        }
+
+        function randomFace() {
+            const idx = Math.floor(Math.random() * myFaces.length);
+            return myFaces[idx];
+        }
+
+        function playRandomSound() {
+            const idx = Math.floor(Math.random() * sounds.length);
+            sounds[idx].currentTime = 0; 
+            sounds[idx].play();
+        }
+
+        function peep() {
+            const time = randomTime(600, 1000); 
+            const hole = randomHole(holes);
+            const moleImg = hole.querySelector('.mole');
+            
+            moleImg.src = randomFace(); 
+            moleImg.classList.add('up'); 
+
+            setTimeout(() => {
+                moleImg.classList.remove('up'); 
+                if (!timeUp) peep();
+            }, time);
+        }
+
+        function startGame() {
+            scoreBoard.textContent = 0;
+            timeUp = false;
+            score = 0;
+            peep();
+            
+            setTimeout(() => timeUp = true, 15000); // 15초 뒤에 게임 종료
+        }
+
+        function whack(e) {
+            if(!e.isTrusted) return; 
+            
+            score++;
+            this.classList.remove('up'); // 누르면 바로 내려감
+            scoreBoard.textContent = score;
+            playRandomSound(); // 소리 재생
+        }
+
+        moles.forEach(mole => mole.addEventListener('mousedown', whack));
+        moles.forEach(mole => mole.addEventListener('touchstart', whack)); 
+    </script>
+</body>
+</html>

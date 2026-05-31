@@ -3,52 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>오민호 잡기 게임!</title>
+    <title>오민호 잡기 게임</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
             text-align: center;
-            background-color: #f0f8ff;
+            background-color: #f0f8ff; /* image_9.png의 배경색 */
             margin: 0;
             padding: 20px;
         }
         h1 {
             color: #333;
+            margin-bottom: 5px;
         }
         .score-board {
             font-size: 24px;
             font-weight: bold;
-            margin-bottom: 20px;
+            margin-bottom: 30px; /* 그리드와 간격 확보 */
         }
         .grid {
             display: grid;
-            grid-template-columns: repeat(3, 100px);
-            grid-gap: 20px;
+            grid-template-columns: repeat(3, 120px); /* 구멍 크기 약간 키움 */
+            grid-gap: 20px; /* image_9.png의 넓은 간격 */
             justify-content: center;
             margin: 0 auto;
         }
         .hole {
-            width: 100px;
-            height: 100px;
-            background-color: #5c4033; /* 흙 색깔 */
+            width: 120px;
+            height: 120px;
+            background-color: #5c4033; /* image_9.png의 갈색 */
             border-radius: 50%;
             position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 0 10px #000;
+            overflow: hidden; /* 두더지가 테두리 밖으로 잘리게 */
+            box-shadow: inset 0 0 10px #000; /* 구멍 깊이감 */
         }
         .mole {
             width: 100%;
             height: 100%;
             position: absolute;
-            top: 100%; /* 처음에는 구멍 아래에 숨어있음 */
-            border-radius: 50%;
-            transition: top 0.2s ease-out;
+            
+            /* 핵심: 기본 숨김 상태 - 구멍 아래에 위치 */
+            top: 100%; 
+            left: 50%;
+            transform: translateX(-50%); /* 가로 중앙 */
+            
+            transition: all 0.2s ease-out; /* 애니메이션 */
             cursor: pointer;
-            object-fit: cover;
+            object-fit: cover; /* 이미지가 구멍에 맞게 가득 차고 중앙 정렬 */
+            object-position: center; /* object-fit 사용 시 중앙에 위치 */
         }
+        
+        /* 핵심: 튀어오른 상태 - 완벽한 중앙 배치 */
         .mole.up {
-            top: 0; /* 클래스가 추가되면 튀어오름 */
+            top: 50%; /* 세로 중앙 */
+            transform: translate(-50%, -50%); /* 가로세로 중앙 완벽 정렬 */
         }
+        
         .start-btn {
             padding: 10px 20px;
             font-size: 18px;
@@ -91,91 +101,9 @@
         let timeUp = false;
         let score = 0;
 
-        // 1. 얼굴 이미지 배열 (보내주신 파일명 적용)
+        // 1. 얼굴 이미지 배열 (image_9.png 기준 순서로 할당)
         const myFaces = [
-            '1000029751.png',
-            '1000029744.png',
-            '1000029758.png',
-            '1000029745.png',
-            '1000029752.png'
-        ];
-
-        // 2. 효과음 오디오 객체 생성
-        // 주의: 준비하신 mp3 파일 이름을 sound1.mp3, sound2.mp3로 변경하거나 아래 이름을 수정하세요.
-        const sounds = [
-            new Audio('sound1.mp3'),
-            new Audio('sound2.mp3')
-        ];
-
-        // 랜덤한 시간(두더지가 올라와 있는 시간)을 구하는 함수
-        function randomTime(min, max) {
-            return Math.round(Math.random() * (max - min) + min);
-        }
-
-        // 랜덤한 구멍을 선택하는 함수
-        function randomHole(holes) {
-            const idx = Math.floor(Math.random() * holes.length);
-            const hole = holes[idx];
-            if (hole === lastHole) {
-                return randomHole(holes);
-            }
-            lastHole = hole;
-            return hole;
-        }
-
-        // 랜덤한 얼굴 이미지를 선택하는 함수
-        function randomFace() {
-            const idx = Math.floor(Math.random() * myFaces.length);
-            return myFaces[idx];
-        }
-
-        // 랜덤한 효과음을 재생하는 함수
-        function playRandomSound() {
-            const idx = Math.floor(Math.random() * sounds.length);
-            // 사운드가 겹치지 않고 처음부터 재생되도록 설정
-            sounds[idx].currentTime = 0; 
-            sounds[idx].play();
-        }
-
-        // 두더지가 튀어오르는 함수
-        function peep() {
-            const time = randomTime(500, 1000); // 0.5초 ~ 1초 사이 랜덤
-            const hole = randomHole(holes);
-            const moleImg = hole.querySelector('.mole');
-            
-            // 올라올 때 랜덤 얼굴로 이미지 변경
-            moleImg.src = randomFace();
-            moleImg.classList.add('up');
-
-            setTimeout(() => {
-                moleImg.classList.remove('up');
-                if (!timeUp) peep();
-            }, time);
-        }
-
-        // 게임 시작 함수
-        function startGame() {
-            scoreBoard.textContent = 0;
-            timeUp = false;
-            score = 0;
-            peep();
-            
-            // 게임은 15초 동안 진행됩니다.
-            setTimeout(() => timeUp = true, 15000); 
-        }
-
-        // 두더지를 클릭(터치)했을 때 점수를 올리고 소리를 내는 함수
-        function whack(e) {
-            if(!e.isTrusted) return; // 부정 클릭 방지
-            
-            score++;
-            this.classList.remove('up'); // 클릭 즉시 내려감
-            scoreBoard.textContent = score;
-            playRandomSound(); // 랜덤 소리 재생
-        }
-
-        moles.forEach(mole => mole.addEventListener('mousedown', whack));
-        moles.forEach(mole => mole.addEventListener('touchstart', whack)); // 모바일 터치 지원
-    </script>
-</body>
-</html>
+            '1000029751.jpg', // image_0 (찡그린)
+            '1000029744.jpg', // image_1 (서프라이즈 - image_9.png 왼쪽)
+            '1000029758.jpg', // image_2 (찡그린/화난 - image_9.png 중앙)
+            '1000029745.jpg', // image_3 (혀 내민 - image_9.png
